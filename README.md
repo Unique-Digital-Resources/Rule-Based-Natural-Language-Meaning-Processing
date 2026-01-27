@@ -20,9 +20,9 @@ To transform natural language into a strict, programmatic data structure that co
 *   **Deterministic:** The same input always produces the exact same output.
 
 ### What it is NOT:
-*   Not a chatbot.
-*   Not a text generator.
-*   Not a probabilistic AI.
+*   **Not an LLM Wrapper:** It does not call GPT, Claude, or Llama. It does not use tokens or neural networks.
+*   **Not a Probabilistic System:** It does not guess. If a sentence is ambiguous or grammatically malformed, it will not "hallucinate" a meaning; it will either apply strict rules or fail explicitly.
+*   **Not Sentiment Analysis:** It focuses on logical meaning (facts, commands, entities), not emotional tone or subjective opinion.
 
 ---
 
