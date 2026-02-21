@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-Bar NLP Analyzer Demo</title>
+    <style>
+        /* Academic-style design */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --error-color: #e74c3c;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --border-color: #dee2e6;
+            --text-color: #2c3e50;
+            --muted-color: #6c757d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-weight: normal;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+            font-weight: normal;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+            font-weight: normal;
+        }
+
+        .subtitle {
+            color: var(--muted-color);
+            font-style: italic;
+        }
+
+        .input-section {
+            background: var(--card-background);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 1rem;
+            font-family: inherit;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: var(--muted-color);
+            cursor: not-allowed;
+        }
+
+        .examples {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .examples-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--secondary-color);
+        }
+
+        .example-btn {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 4px;
+            font-size: 0.9rem;
+            background: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.visible {
+            display: block;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .result-card {
+            background: var(--card-background);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .result-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .result-content {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .tokens-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .token-item {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            background: #e8f4f8;
+            border-radius: 6px;
+            border: 1px solid #b8daff;
+        }
+
+        .token-text {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .token-pos {
+            font-size: 0.75rem;
+            color: var(--muted-color);
+            margin-top: 4px;
+        }
+
+        .token-lemma {
+            font-size: 0.7rem;
+            color: var(--accent-color);
+            font-style: italic;
+        }
+
+        .tree-visualization {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .tree-node {
+            color: var(--primary-color);
+        }
+
+        .tree-label {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .tree-word {
+            color: var(--success-color);
+        }
+
+        .meaning-section {
+            margin-bottom: 10px;
+        }
+
+        .meaning-label {
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .meaning-value {
+            color: var(--primary-color);
+        }
+
+        .validation-pass {
+            color: var(--success-color);
+        }
+
+        .validation-fail {
+            color: var(--error-color);
+        }
+
+        .validation-warning {
+            color: var(--warning-color);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .error-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .error-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: #fff3cd;
+            border-left: 4px solid var(--warning-color);
+            border-radius: 4px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--muted-color);
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .summary-box h3 {
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .summary-text {
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: var(--muted-color);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>X-Bar NLP Analyzer</h1>
+        <p class="subtitle">A rule-based natural language meaning processing system using X-Bar theory</p>
+    </header>
+
+    <main>
+        <section class="input-section">
+            <div class="input-group">
+                <div class="input-field">
+                    <label for="sentence-input">Enter a sentence to analyze:</label>
+                    <input type="text" id="sentence-input" placeholder="e.g., The man reads a book" autofocus>
+                </div>
+                <button id="analyze-btn">Analyze</button>
+            </div>
+            
+            <div class="examples">
+                <div class="examples-title">Example sentences:</div>
+                <button class="example-btn" data-sentence="The man reads a book">Action: The man reads a book</button>
+                <button class="example-btn" data-sentence="The apple is red">Property: The apple is red</button>
+                <button class="example-btn" data-sentence="Socrates is a man">Identity: Socrates is a man</button>
+                <button class="example-btn" data-sentence="A dog runs quickly">Adjunct: A dog runs quickly</button>
+            </div>
+        </section>
+
+        <section id="results" class="results-section">
+            <div class="summary-box" id="summary-box">
+                <h3>Analysis Summary</h3>
+                <div id="summary-text" class="summary-text"></div>
+            </div>
+
+            <div class="results-grid">
+                <div class="result-card">
+                    <h2>Tokenized Words</h2>
+                    <div id="tokens-output" class="result-content">
+                        <div class="loading">Analyzing...</div>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h2>X-Bar Tree Structure</h2>
+                    <div id="tree-output" class="result-content tree-visualization">
+                        <div class="loading">Building tree...</div>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h2>Extracted Meaning</h2>
+                    <div id="meaning-output" class="result-content">
+                        <div class="loading">Extracting meaning...</div>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h2>Validation Results</h2>
+                    <div id="validation-output" class="result-content">
+                        <div class="loading">Validating...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>X-Bar NLP Analyzer v1.0.0 | <a href="tests/index.html">Run Tests</a></p>
+        <p>Built with rule-based X-Bar theory for natural language understanding</p>
+    </footer>
+
+    <script type="module">
+        import { NLPAnalyzer } from './src/analyzer.js';
+
+        // Initialize analyzer
+        const analyzer = NLPAnalyzer.createDefault({ strictMode: false });
+
+        // DOM elements
+        const sentenceInput = document.getElementById('sentence-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const resultsSection = document.getElementById('results');
+        const summaryText = document.getElementById('summary-text');
+        const tokensOutput = document.getElementById('tokens-output');
+        const treeOutput = document.getElementById('tree-output');
+        const meaningOutput = document.getElementById('meaning-output');
+        const validationOutput = document.getElementById('validation-output');
+
+        // Example buttons
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                sentenceInput.value = btn.dataset.sentence;
+                analyzeSentence();
+            });
+        });
+
+        // Analyze button
+        analyzeBtn.addEventListener('click', analyzeSentence);
+
+        // Enter key
+        sentenceInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                analyzeSentence();
+            }
+        });
+
+        function analyzeSentence() {
+            const sentence = sentenceInput.value.trim();
+            
+            if (!sentence) {
+                alert('Please enter a sentence to analyze.');
+                return;
+            }
+
+            // Show results section
+            resultsSection.classList.add('visible');
+
+            // Reset outputs
+            tokensOutput.innerHTML = '<div class="loading">Analyzing...</div>';
+            treeOutput.innerHTML = '<div class="loading">Building tree...</div>';
+            meaningOutput.innerHTML = '<div class="loading">Extracting meaning...</div>';
+            validationOutput.innerHTML = '<div class="loading">Validating...</div>';
+
+            // Perform analysis
+            try {
+                const result = analyzer.analyze(sentence);
+                displayResults(result);
+            } catch (error) {
+                console.error('Analysis error:', error);
+                tokensOutput.innerHTML = `<span class="validation-fail">Error: ${error.message}</span>`;
+                treeOutput.innerHTML = '<span class="validation-fail">Analysis failed</span>';
+                meaningOutput.innerHTML = '<span class="validation-fail">Analysis failed</span>';
+                validationOutput.innerHTML = '<span class="validation-fail">Analysis failed</span>';
+            }
+        }
+
+        function displayResults(result) {
+            // Display summary
+            summaryText.textContent = result.summary || 'Analysis complete.';
+
+            // Display tokens
+            displayTokens(result.tokens);
+
+            // Display tree
+            displayTree(result.tree);
+
+            // Display meaning
+            displayMeaning(result.meaning);
+
+            // Display validation
+            displayValidation(result.validation);
+        }
+
+        function displayTokens(tokens) {
+            if (!tokens || tokens.length === 0) {
+                tokensOutput.innerHTML = '<span class="muted-color">No tokens found.</span>';
+                return;
+            }
+
+            let html = '<div class="tokens-list">';
+            for (const token of tokens) {
+                html += `
+                    <div class="token-item">
+                        <span class="token-text">${escapeHtml(token.text)}</span>
+                        <span class="token-pos">${token.pos || 'UNKNOWN'}</span>
+                        ${token.lemma && token.lemma !== token.text.toLowerCase() 
+                            ? `<span class="token-lemma">(${escapeHtml(token.lemma)})</span>` 
+                            : ''}
+                    </div>
+                `;
+            }
+            html += '</div>';
+            tokensOutput.innerHTML = html;
+        }
+
+        function displayTree(tree) {
+            if (!tree) {
+                treeOutput.innerHTML = '<span class="muted-color">No tree generated.</span>';
+                return;
+            }
+
+            const treeString = formatTree(tree, 0);
+            treeOutput.innerHTML = treeString;
+        }
+
+        function formatTree(node, indent) {
+            if (!node) return '';
+            
+            const spaces = '  '.repeat(indent);
+            let result = '';
+
+            // Node label
+            const label = node.label || node.category || '?';
+            result += `<span class="tree-label">${spaces}${label}</span>`;
+
+            // Head token
+            if (node.headToken) {
+                result += ` <span class="tree-word">[${escapeHtml(node.headToken.text)}]</span>`;
+            }
+
+            result += '\n';
+
+            // Specifier
+            if (node.specifier) {
+                result += `${spaces}  Spec:\n`;
+                result += formatTree(node.specifier, indent + 2);
+            }
+
+            // Complement
+            if (node.complement) {
+                result += `${spaces}  Comp:\n`;
+                result += formatTree(node.complement, indent + 2);
+            }
+
+            // Adjuncts
+            if (node.adjuncts && node.adjuncts.length > 0) {
+                for (let i = 0; i < node.adjuncts.length; i++) {
+                    result += `${spaces}  Adjunct[${i}]:\n`;
+                    result += formatTree(node.adjuncts[i], indent + 2);
+                }
+            }
+
+            return result;
+        }
+
+        function displayMeaning(meaning) {
+            if (!meaning) {
+                meaningOutput.innerHTML = '<span class="muted-color">No meaning extracted.</span>';
+                return;
+            }
+
+            let html = '';
+
+            // Sentence type
+            html += `<div class="meaning-section">
+                <span class="meaning-label">Type:</span> 
+                <span class="meaning-value">${meaning.type || 'Unknown'}</span>
+            </div>`;
+
+            // Predicate
+            if (meaning.predicate) {
+                html += `<div class="meaning-section">
+                    <span class="meaning-label">Predicate:</span> 
+                    <span class="meaning-value">${meaning.predicate.text} (${meaning.predicate.type})</span>
+                </div>`;
+            }
+
+            // Arguments
+            if (meaning.arguments) {
+                html += '<div class="meaning-section"><span class="meaning-label">Arguments:</span></div>';
+                for (const [role, entity] of Object.entries(meaning.arguments)) {
+                    if (entity) {
+                        const entityText = entity.text || (Array.isArray(entity) ? entity.map(e => e.text).join(', ') : '?');
+                        const categories = entity.categories || [];
+                        html += `<div style="margin-left: 20px;">
+                            <span class="meaning-label">${role}:</span> 
+                            <span class="meaning-value">${entityText}</span>
+                            ${categories.length > 0 ? `<span style="color: var(--muted-color);"> [${categories.join(', ')}]</span>` : ''}
+                        </div>`;
+                    }
+                }
+            }
+
+            meaningOutput.innerHTML = html;
+        }
+
+        function displayValidation(validation) {
+            if (!validation) {
+                validationOutput.innerHTML = '<span class="muted-color">No validation performed.</span>';
+                return;
+            }
+
+            let html = '';
+
+            // Status
+            const statusClass = validation.isValid ? 'status-success' : 'status-error';
+            const statusText = validation.isValid ? '✓ Valid' : '✗ Invalid';
+            html += `<div class="meaning-section">
+                <span class="status-badge ${statusClass}">${statusText}</span>
+            </div>`;
+
+            // Errors
+            if (validation.errors && validation.errors.length > 0) {
+                html += '<div class="meaning-section"><span class="meaning-label validation-fail">Errors:</span></div>';
+                html += '<ul class="error-list">';
+                for (const error of validation.errors) {
+                    html += `<li class="error-item">${escapeHtml(error.message || error)}</li>`;
+                }
+                html += '</ul>';
+            }
+
+            // Warnings
+            if (validation.warnings && validation.warnings.length > 0) {
+                html += '<div class="meaning-section"><span class="meaning-label validation-warning">Warnings:</span></div>';
+                html += '<ul class="error-list" style="border-left-color: var(--warning-color); background: #fff8e1;">';
+                for (const warning of validation.warnings) {
+                    html += `<li class="error-item" style="border-left-color: var(--warning-color);">${escapeHtml(warning.message || warning)}</li>`;
+                }
+                html += '</ul>';
+            }
+
+            // Details
+            if (validation.details) {
+                html += '<div class="meaning-section"><span class="meaning-label">Details:</span></div>';
+                html += `<div style="margin-left: 20px; font-size: 0.85rem; color: var(--muted-color);">
+                    <div>Entity count: ${validation.details.entityCount || 0}</div>
+                    <div>Has predicate: ${validation.details.hasPredicate ? 'Yes' : 'No'}</div>
+                    ${validation.details.predicateType ? `<div>Predicate type: ${validation.details.predicateType}</div>` : ''}
+                </div>`;
+            }
+
+            validationOutput.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

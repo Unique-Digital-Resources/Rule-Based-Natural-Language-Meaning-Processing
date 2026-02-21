@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-Bar NLP Analyzer - Test Runner</title>
+    <style>
+        /* Test runner styles */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --error-color: #e74c3c;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --border-color: #dee2e6;
+            --text-color: #2c3e50;
+            --muted-color: #6c757d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--muted-color);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: var(--muted-color);
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: var(--secondary-color);
+        }
+
+        button.secondary:hover {
+            background: #1a252f;
+        }
+
+        .summary-card {
+            background: var(--card-background);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .summary-card.visible {
+            display: block;
+        }
+
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .summary-status {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .summary-status.passed {
+            color: var(--success-color);
+        }
+
+        .summary-status.failed {
+            color: var(--error-color);
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--muted-color);
+        }
+
+        .stat-value.passed {
+            color: var(--success-color);
+        }
+
+        .stat-value.failed {
+            color: var(--error-color);
+        }
+
+        .test-suites {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .test-suite {
+            background: var(--card-background);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .suite-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .suite-header:hover {
+            background: #e9ecef;
+        }
+
+        .suite-name {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .suite-stats {
+            font-size: 0.9rem;
+            color: var(--muted-color);
+        }
+
+        .suite-tests {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .suite-tests.expanded {
+            max-height: 2000px;
+            padding: 10px 0;
+        }
+
+        .test-item {
+            padding: 8px 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .test-item:hover {
+            background: #f8f9fa;
+        }
+
+        .test-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .test-icon.pass {
+            color: var(--success-color);
+        }
+
+        .test-icon.fail {
+            color: var(--error-color);
+        }
+
+        .test-name {
+            flex: 1;
+        }
+
+        .test-error {
+            margin-top: 5px;
+            padding: 8px 12px;
+            background: #fff3cd;
+            border-left: 4px solid var(--warning-color);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #856404;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted-color);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .console-output.visible {
+            display: block;
+        }
+
+        .console-line {
+            margin: 2px 0;
+        }
+
+        .console-pass {
+            color: #4ec9b0;
+        }
+
+        .console-fail {
+            color: #f14c4c;
+        }
+
+        .console-suite {
+            color: #569cd6;
+        }
+
+        .console-summary {
+            color: #dcdcaa;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: var(--muted-color);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🧪 X-Bar NLP Analyzer Tests</h1>
+        <p class="subtitle">Comprehensive test suite for the rule-based NLP system</p>
+    </header>
+
+    <div class="controls">
+        <button id="run-tests-btn">▶ Run All Tests</button>
+        <button id="toggle-console-btn" class="secondary">📋 Toggle Console</button>
+        <a href="../demo.html" style="text-decoration: none;"><button class="secondary">← Back to Demo</button></a>
+    </div>
+
+    <div id="summary-card" class="summary-card">
+        <div class="summary-header">
+            <h2>Test Results</h2>
+            <span id="summary-status" class="summary-status"></span>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div id="stat-total" class="stat-value">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat-item">
+                <div id="stat-passed" class="stat-value passed">0</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat-item">
+                <div id="stat-failed" class="stat-value failed">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="test-suites" class="test-suites">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <div>Click "Run All Tests" to start testing</div>
+        </div>
+    </div>
+
+    <div id="console-output" class="console-output"></div>
+
+    <footer>
+        <p>X-Bar NLP Analyzer Test Suite | <a href="../demo.html">Demo</a></p>
+    </footer>
+
+    <script type="module">
+        import { runTests, clearTests, createTestSummaryHTML } from './test-runner.js';
+        
+        // Import all test modules to register them
+        import './test-dictionary.js';
+        import './test-tokenizer.js';
+        import './test-parser.js';
+        import './test-semantic.js';
+        import './test-integration.js';
+
+        // DOM elements
+        const runTestsBtn = document.getElementById('run-tests-btn');
+        const toggleConsoleBtn = document.getElementById('toggle-console-btn');
+        const summaryCard = document.getElementById('summary-card');
+        const summaryStatus = document.getElementById('summary-status');
+        const statTotal = document.getElementById('stat-total');
+        const statPassed = document.getElementById('stat-passed');
+        const statFailed = document.getElementById('stat-failed');
+        const testSuites = document.getElementById('test-suites');
+        const consoleOutput = document.getElementById('console-output');
+
+        // Run tests button
+        runTestsBtn.addEventListener('click', async () => {
+            runTestsBtn.disabled = true;
+            runTestsBtn.textContent = '⏳ Running...';
+            
+            // Clear previous results
+            testSuites.innerHTML = '<div class="loading"><div class="loading-spinner"></div><div>Running tests...</div></div>';
+            
+            // Small delay to allow UI to update
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            try {
+                // Run tests
+                const results = runTests();
+                
+                // Update summary
+                summaryCard.classList.add('visible');
+                statTotal.textContent = results.total;
+                statPassed.textContent = results.passed;
+                statFailed.textContent = results.failed;
+                
+                if (results.failed === 0) {
+                    summaryStatus.textContent = '✓ All Passed';
+                    summaryStatus.className = 'summary-status passed';
+                } else {
+                    summaryStatus.textContent = '✗ Some Failed';
+                    summaryStatus.className = 'summary-status failed';
+                }
+                
+                // Display test suites
+                displayTestSuites(results.suites);
+                
+                // Update console output
+                updateConsoleOutput(results);
+                
+            } catch (error) {
+                console.error('Test runner error:', error);
+                testSuites.innerHTML = `<div class="loading" style="color: var(--error-color);">Error running tests: ${error.message}</div>`;
+            }
+            
+            runTestsBtn.disabled = false;
+            runTestsBtn.textContent = '▶ Run All Tests';
+        });
+
+        // Toggle console button
+        toggleConsoleBtn.addEventListener('click', () => {
+            consoleOutput.classList.toggle('visible');
+        });
+
+        function displayTestSuites(suites) {
+            let html = '';
+            
+            for (const suite of suites) {
+                const allPassed = suite.failed === 0;
+                
+                html += `
+                    <div class="test-suite">
+                        <div class="suite-header" onclick="toggleSuite(this)">
+                            <span class="suite-name">${escapeHtml(suite.name)}</span>
+                            <span class="suite-stats">
+                                <span style="color: var(--success-color);">✓ ${suite.passed}</span>
+                                ${suite.failed > 0 ? `<span style="color: var(--error-color); margin-left: 10px;">✗ ${suite.failed}</span>` : ''}
+                            </span>
+                        </div>
+                        <div class="suite-tests">
+                `;
+                
+                for (const test of suite.tests) {
+                    const icon = test.passed ? '✓' : '✗';
+                    const iconClass = test.passed ? 'pass' : 'fail';
+                    
+                    html += `
+                        <div class="test-item">
+                            <span class="test-icon ${iconClass}">${icon}</span>
+                            <div class="test-name">
+                                ${escapeHtml(test.name)}
+                                ${test.error ? `<div class="test-error">${escapeHtml(test.error)}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            testSuites.innerHTML = html;
+        }
+
+        function updateConsoleOutput(results) {
+            let html = '';
+            
+            for (const suite of results.suites) {
+                html += `<div class="console-line console-suite">${escapeHtml(suite.name)}</div>`;
+                
+                for (const test of suite.tests) {
+                    const cssClass = test.passed ? 'console-pass' : 'console-fail';
+                    const icon = test.passed ? '✓' : '✗';
+                    html += `<div class="console-line ${cssClass}">  ${icon} ${escapeHtml(test.name)}</div>`;
+                    
+                    if (test.error) {
+                        html += `<div class="console-line" style="color: #808080; margin-left: 20px;">→ ${escapeHtml(test.error)}</div>`;
+                    }
+                }
+                
+                html += '<div class="console-line"></div>';
+            }
+            
+            html += `<div class="console-line console-summary">───────────────────────────────────</div>`;
+            html += `<div class="console-line console-summary">Tests: ${results.total} total, ${results.passed} passed, ${results.failed} failed</div>`;
+            
+            consoleOutput.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Make toggleSuite available globally
+        window.toggleSuite = function(header) {
+            const tests = header.nextElementSibling;
+            tests.classList.toggle('expanded');
+        };
+    </script>
+</body>
+</html>
