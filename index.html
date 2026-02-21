@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-Bar Analyzer</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --bg: #f1f5f9;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --tree-line: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            flex-shrink: 0;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: var(--surface);
+        }
+
+        main {
+            flex: 1;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            gap: 1rem;
+            overflow: hidden;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-section {
+            flex-shrink: 0;
+            gap: 0.5rem;
+        }
+
+        label { font-weight: 600; font-size: 0.85rem; color: var(--secondary); }
+
+        textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-family: var(--font-main);
+            font-size: 1rem;
+            resize: none;
+            height: 50px;
+        }
+
+        textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        button {
+            padding: 0.4rem 0.8rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover { background-color: var(--primary-dark); }
+        button.secondary { background-color: white; border: 1px solid #cbd5e1; color: var(--text); }
+        
+        .examples { font-size: 0.75rem; color: var(--secondary); }
+        .tag {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-right: 0.4rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .tag:hover { background: #bae6fd; border-color: #7dd3fc; }
+
+        .tree-section {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .tree-container {
+            flex: 1;
+            overflow: auto;
+            background: #f8fafc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        /* CSS Tree Logic - COMPACTED */
+        .tree ul {
+            padding-top: 15px; /* Reduced from 20px */
+            position: relative;
+            display: flex; 
+            justify-content: center;
+        }
+
+        .tree li {
+            float: left; 
+            text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 15px 2px 0 2px; /* Reduced horizontal gap and vertical gap */
+        }
+
+        /* Connectors - THINNER */
+        .tree li::before, .tree li::after {
+            content: ''; position: absolute; top: 0; right: 50%;
+            border-top: 1px solid var(--tree-line); /* Thinner lines */
+            width: 50%; height: 15px; /* Reduced height */
+        }
+        .tree li::after { right: auto; left: 50%; border-left: 1px solid var(--tree-line); } /* Thinner lines */
+
+        .tree li:only-child::after, .tree li:only-child::before { display: none; }
+        .tree li:only-child { padding-top: 0; }
+
+        .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+        .tree li:last-child::before { border-right: 1px solid var(--tree-line); border-radius: 0 4px 0 0; }
+        .tree li:first-child::after { border-radius: 4px 0 0 0; }
+
+        .tree ul ul::before {
+            content: ''; position: absolute; top: 0; left: 50%;
+            border-left: 1px solid var(--tree-line); /* Thinner lines */
+            width: 0; height: 15px; /* Reduced height */
+        }
+
+        /* Smaller Nodes */
+        .node {
+            border: 2px solid var(--primary);
+            padding: 4px 6px; /* Reduced padding */
+            color: var(--text);
+            font-family: var(--font-main);
+            font-size: 0.75rem; /* Smaller font */
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            border-radius: 4px;
+            background: white;
+            position: relative;
+            z-index: 2;
+            min-width: 40px; /* Smaller min width */
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .node.bar { border-color: var(--text); background: #f1f5f9; font-weight: bold; }
+        .node.head { border-color: var(--success); background: #ecfdf5; }
+        .node.leaf { border-style: dashed; border-color: var(--secondary); background: #fff; }
+
+        /* Smaller Subtitles */
+        .node-subtitle {
+            display: block;
+            font-size: 0.55rem; /* Smaller */
+            color: #666;
+            font-weight: normal;
+            text-transform: uppercase;
+            margin-top: 1px; /* Tighter */
+            letter-spacing: 0.2px;
+        }
+
+        #status-msg {
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: none;
+        }
+        .status-error { background-color: #fef2f2; color: var(--error); border: 1px solid #fecaca; }
+
+    </style>
+</head>
+<body>
+
+    <header></header>
+
+    <main>
+        <!-- Input Section -->
+        <section class="card input-section">
+            <div class="controls">
+                <input type="text" id="user-input" placeholder="e.g., Amanda is a girl..." style="flex:1; padding: 0.4rem; border:1px solid #ccc; border-radius:4px;">
+                <button id="analyze-btn">Analyze</button>
+                <button id="clear-btn" class="secondary">Clear</button>
+            </div>
+
+            <div class="examples">
+                Try: 
+                <span class="tag" onclick="setText('Amanda is a girl')">Amanda is a girl</span>
+                <span class="tag" onclick="setText('Carl is a doctor')">Carl is a doctor</span>
+                <span class="tag" onclick="setText('The apple is red')">The apple is red</span>
+                <span class="tag" onclick="setText('Man sells car')">Man sells car</span>
+                <span class="tag" onclick="setText('Amanda is happy')">Amanda is happy</span>
+            </div>
+            <div id="status-msg"></div>
+        </section>
+
+        <!-- X-Bar Tree Section -->
+        <section class="card tree-section">
+            <div class="tree-container" id="tree-canvas">
+                <div class="tree">
+                    <ul><li><div class="node">Input text to see tree</div></li></ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const LABELS = {
+            "TP": "Tense Phrase",
+            "NP": "Noun Phrase",
+            "VP": "Verb Phrase",
+            "AP": "Adj. Phrase",
+            "T": "Tense",
+            "Det": "Determiner",
+            "N'": "N-bar",
+            "V'": "V-bar",
+            "A'": "A-bar",
+            "Neg": "Negation",
+            "T'": "T-bar"
+        };
+
+        const LEXICON = {
+            "carl": { type: "Noun", semantic: "Subject", class: "Man" },
+            "man": { type: "Noun", semantic: "Subject", class: "Man" },
+            "woman": { type: "Noun", semantic: "Subject", class: "Woman" },
+            "apple": { type: "Noun", semantic: "Subject", class: "Fruit" },
+            "car": { type: "Noun", semantic: "Object", class: "Car" },
+            "doctor": { type: "Noun", semantic: "ClassInheritance", class: "Doctor" },
+            "sells": { type: "Verb", semantic: "Action", func: "sell" },
+            "pays": { type: "Verb", semantic: "Action", func: "pay" },
+            "is": { type: "Copula", semantic: "Assignment" }, 
+            "are": { type: "Copula", semantic: "Assignment" },
+            "a": { type: "Determiner", semantic: "Classifier" },
+            "an": { type: "Determiner", semantic: "Classifier" },
+            "the": { type: "Determiner", semantic: "Definite" },
+            "not": { type: "Adverb", semantic: "Negation" },
+            "red": { type: "Adjective", semantic: "Property", prop: "color", val: "red" },
+            "blue": { type: "Adjective", semantic: "Property", prop: "color", val: "blue" },
+            "happy": { type: "Adjective", semantic: "Property", prop: "mood", val: "happy" },
+            "sad": { type: "Adjective", semantic: "Property", prop: "mood", val: "sad" }
+        };
+
+        class Analyzer {
+            constructor() {
+                this.statusEl = document.getElementById('status-msg');
+            }
+
+            tokenize(text) {
+                return text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").split(/\s+/).filter(w => w.length > 0);
+            }
+
+            tagWords(words) {
+                let tags = words.map(word => {
+                    const entry = LEXICON[word];
+                    if (entry) return { word: word, ...entry, inferred: false };
+                    return { word: word, type: "Unknown", semantic: "Unknown", inferred: false };
+                });
+
+                for (let i = 0; i < tags.length; i++) {
+                    if (tags[i].type === "Unknown") {
+                        if (i + 1 < tags.length && tags[i + 1].type === "Copula") {
+                            tags[i].type = "Noun";
+                            tags[i].semantic = "Subject";
+                            tags[i].class = capitalize(tags[i].word);
+                            tags[i].inferred = true;
+                        }
+                        else if (i - 2 >= 0 && tags[i - 2].type === "Copula" && tags[i - 1].type === "Determiner") {
+                            tags[i].type = "Noun";
+                            tags[i].semantic = "ClassInheritance";
+                            tags[i].class = capitalize(tags[i].word);
+                            tags[i].inferred = true;
+                        }
+                        else if (i - 1 >= 0 && tags[i - 1].type === "Copula") {
+                            let isEnd = (i + 1 >= tags.length);
+                            let nextIsContent = (i + 1 < tags.length && (tags[i+1].type === "Noun" || tags[i+1].type === "Determiner"));
+                            if (isEnd || !nextIsContent) {
+                                tags[i].type = "Adjective";
+                                tags[i].semantic = "Property";
+                                tags[i].prop = "value";
+                                tags[i].val = tags[i].word;
+                                tags[i].inferred = true;
+                            }
+                        }
+                        else if (i - 1 >= 0 && i + 1 < tags.length && tags[i-1].type === "Noun" && tags[i+1].type === "Noun") {
+                            tags[i].type = "Verb";
+                            tags[i].semantic = "Action";
+                            tags[i].func = tags[i].word;
+                            tags[i].inferred = true;
+                        }
+                    }
+                }
+                return tags;
+            }
+
+            analyzeSentence(text) {
+                const words = this.tokenize(text);
+                if (words.length === 0) return this.showError("Please enter text.");
+
+                const tags = this.tagWords(words);
+                let structure = null;
+
+                if (this.matchesPattern(tags, ["Noun", "Copula", "Determiner", "Noun"])) structure = this.buildInheritanceTree(tags);
+                else if (this.matchesPattern(tags, ["Noun", "Copula", "Adjective"])) structure = this.buildPropertyTree(tags);
+                else if (this.matchesPattern(tags, ["Noun", "Copula", "Adverb", "Adjective"])) structure = this.buildPropertyTree(tags, true);
+                else if (this.matchesPattern(tags, ["Noun", "Verb", "Noun"])) structure = this.buildActionTree(tags);
+                else return this.showError(`Structure unknown: ${tags.map(t => t.type).join(", ")}`);
+
+                return { treeData: structure, tags: tags };
+            }
+
+            matchesPattern(tags, types) {
+                if (tags.length !== types.length) return false;
+                return tags.every((t, i) => t.type === types[i] || t.type === "Unknown");
+            }
+
+            buildInheritanceTree(tags) {
+                return {
+                    label: "TP", type: "bar", children: [
+                        { label: "NP", type: "bar", children: [
+                            { label: "N'", type: "bar", children: [
+                                { label: tags[0].word, type: "leaf", meta: tags[0], inferred: tags[0].inferred }
+                            ]}
+                        ]},
+                        { label: "T'", type: "bar", children: [
+                            { label: "T", type: "head", children: [{ label: tags[1].word, type: "leaf" }]},
+                            { label: "VP", type: "bar", children: [
+                                { label: "NP", type: "bar", children: [
+                                    { label: "Det", type: "head", children: [{ label: tags[2].word, type: "leaf" }]},
+                                    { label: "N'", type: "bar", children: [
+                                        { label: tags[3].word, type: "leaf", meta: tags[3], inferred: tags[3].inferred }
+                                    ]}
+                                ]}
+                            ]}
+                        ]}
+                    ]
+                };
+            }
+
+            buildPropertyTree(tags, isNegated = false) {
+                let adjNode;
+                if(isNegated) {
+                    adjNode = { label: "AP", type: "bar", children: [
+                        { label: "Neg", type: "head", children: [{ label: tags[2].word, type: "leaf" }]},
+                        { label: "A'", type: "bar", children: [{ label: tags[3].word, type: "leaf", meta: tags[3], inferred: tags[3].inferred }]}
+                    ]};
+                } else {
+                    adjNode = { label: "AP", type: "bar", children: [
+                        { label: "A'", type: "bar", children: [{ label: tags[2].word, type: "leaf", meta: tags[2], inferred: tags[2].inferred }]}
+                    ]};
+                }
+
+                return {
+                    label: "TP", type: "bar", children: [
+                        { label: "NP", type: "bar", children: [
+                            { label: "N'", type: "bar", children: [
+                                { label: tags[0].word, type: "leaf", meta: tags[0], inferred: tags[0].inferred }
+                            ]}
+                        ]},
+                        { label: "T'", type: "bar", children: [
+                            { label: "T", type: "head", children: [{ label: tags[1].word, type: "leaf" }]},
+                            adjNode
+                        ]}
+                    ]
+                };
+            }
+
+            buildActionTree(tags) {
+                return {
+                    label: "TP", type: "bar", children: [
+                        { label: "NP", type: "bar", children: [
+                            { label: "N'", type: "bar", children: [{ label: tags[0].word, type: "leaf", meta: tags[0], inferred: tags[0].inferred }]}
+                        ]},
+                        { label: "T'", type: "bar", children: [
+                            { label: "T", type: "head", children: [{ label: "∅", type: "leaf" }] },
+                            { label: "VP", type: "bar", children: [
+                                { label: "V'", type: "bar", children: [
+                                    { label: tags[1].word, type: "leaf", meta: tags[1], inferred: tags[1].inferred },
+                                    { label: "NP", type: "bar", children: [
+                                        { label: "N'", type: "bar", children: [{ label: tags[2].word, type: "leaf", meta: tags[2], inferred: tags[2].inferred }]}
+                                    ]}
+                                ]}
+                            ]}
+                        ]}
+                    ]
+                };
+            }
+
+            showError(msg) {
+                this.statusEl.textContent = msg;
+                this.statusEl.className = "status-error";
+                this.statusEl.style.display = "block";
+                return null;
+            }
+
+            clearStatus() {
+                this.statusEl.style.display = "none";
+            }
+        }
+
+        const analyzer = new Analyzer();
+
+        function setText(text) {
+            document.getElementById('user-input').value = text;
+            runAnalysis();
+        }
+
+        document.getElementById('analyze-btn').addEventListener('click', runAnalysis);
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            document.getElementById('user-input').value = "";
+            document.getElementById('tree-canvas').innerHTML = '<div class="tree"><ul><li><div class="node">Input text to see tree</div></li></ul></div>';
+            analyzer.clearStatus();
+        });
+
+        document.getElementById('user-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') runAnalysis();
+        });
+
+        function runAnalysis() {
+            analyzer.clearStatus();
+            const text = document.getElementById('user-input').value;
+            const result = analyzer.analyzeSentence(text);
+            if (result) renderTree(result.treeData);
+        }
+
+        function renderTree(node) {
+            const container = document.getElementById('tree-canvas');
+            container.innerHTML = '<div class="tree"><ul></ul></div>';
+            container.querySelector('ul').appendChild(createTreeNode(node));
+        }
+
+        function createTreeNode(nodeData) {
+            const li = document.createElement('li');
+            const div = document.createElement('div');
+            div.className = `node ${nodeData.type}`;
+            
+            let content = nodeData.label;
+            if (nodeData.type !== 'leaf') {
+                const subtitle = LABELS[nodeData.label] || "";
+                if (subtitle) content += `<span class="node-subtitle">${subtitle}</span>`;
+            }
+            
+            if (nodeData.inferred) {
+                div.style.borderColor = "#ef4444"; 
+                div.style.color = "#ef4444";
+            }
+            
+            div.innerHTML = content;
+            if(nodeData.meta) div.title = `Type: ${nodeData.meta.type}\nSemantic: ${nodeData.meta.semantic}`;
+            li.appendChild(div);
+
+            if (nodeData.children) {
+                const ul = document.createElement('ul');
+                nodeData.children.forEach(child => ul.appendChild(createTreeNode(child)));
+                li.appendChild(ul);
+            }
+            return li;
+        }
+
+        function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+    </script>
+</body>
+</html>
